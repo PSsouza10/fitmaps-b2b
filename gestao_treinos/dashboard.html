@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FitMaps</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .btn {
+            background-color: #0275d8;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #025aa5;
+        }
+        .btn-danger {
+            background-color: #d9534f;
+        }
+        .btn-danger:hover {
+            background-color: #c9302c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #555;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .empty-msg {
+            color: #777;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Painel do Atleta</h1>
+            <div>
+                <span>Olá, <strong>{{ request.user.username }}</strong>!</span>
+                <form action="{% url 'logout' %}" method="post" style="display: inline; margin-left: 15px;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sair</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Seção de Ações Rápidas -->
+        <div class="section">
+            <a href="{% url 'novo_treino' %}" class="btn">+ Registrar Novo Treino</a>
+        </div>
+
+        <!-- Seção de Prescrições Pendentes -->
+        <div class="section">
+            <h2>Prescrições de Treino Pendentes</h2>
+            {% if prescricoes %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descrição / Objetivo</th>
+                            <th>Concluído</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescricao in prescricoes %}
+                            <tr>
+                                {{ prescricao.detalhes|default:"<td>Treino prescrito pendente</td>" }}
+                                <td>Pendente</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty-msg">Nenhuma prescrição pendente no momento.</p>
+            {% endif %}
+        </div>
+
+        <!-- Seção de Histórico de Treinos -->
+        <div class="section">
+            <h2>Seus Treinos Registrados</h2>
+            {% if treinos %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Distância (km)</th>
+                            <th>Tempo (min)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for treino in treinos %}
+                            <tr>
+                                <td>{{ treino.data_treino|default:"Data recente" }}</td>
+                                <td>{{ treino.distancia_km }} km</td>
+                                <td>{{ treino.tempo_minutos }} min</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty-msg">Você ainda não registrou nenhum treino.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

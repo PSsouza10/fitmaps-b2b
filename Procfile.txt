@@ -1,0 +1,1 @@
+web: gunicorn fitmaps_b2b.wsgi:application

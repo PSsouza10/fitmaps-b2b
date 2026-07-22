@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitMaps PRO - Clínica & Performance Multidisciplinar</title>
+    <!-- Bootstrap CSS v5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { background-color: #0f172a; color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-brand { font-weight: 700; letter-spacing: 0.5px; color: #38bdf8 !important; }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+        #map { height: 380px; width: 100%; border-radius: 8px; }
+        .metric-box { background: #0f172a; border-radius: 8px; padding: 15px; border-left: 4px solid #38bdf8; border: 1px solid #334155; }
+        .metric-box h3 { font-size: 1.5rem; font-weight: bold; margin-bottom: 0; color: #ffffff; }
+        .table { color: #f8f9fa; background-color: transparent; }
+        .table-light { background-color: #334155 !important; color: #f8f9fa !important; border-color: #475569; }
+        .table-hover tbody tr:hover { background-color: #334155; color: #fff; }
+        .badge-pro { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #fff; font-weight: 700; }
+        .nav-tabs .nav-link { color: #94a3b8; border: none; font-weight: 600; }
+        .nav-tabs .nav-link.active { background-color: #334155 !important; color: #38bdf8 !important; border: none; border-radius: 8px 8px 0 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Navegação -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm border-bottom border-secondary">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="#">⚡ FitMaps PRO <span class="badge badge-pro ms-2 px-2 py-1 small">Clínico & Esportivo</span></a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3 small">Paciente/Atleta: <strong>{{ request.user.username }}</strong></span>
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <div class="container py-4">
+        
+        <!-- Abas de Navegação: Atleta vs Prontuário Clínico -->
+        <ul class="nav nav-tabs mb-4" id="painelTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="treino-tab" data-bs-toggle="tab" data-bs-target="#treinoContent" type="button" role="tab">🏃‍♂️ Radar de Corrida & GPS</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="clinico-tab" data-bs-toggle="tab" data-bs-target="#clinicoContent" type="button" role="tab">🩺 Prontuário Multidisciplinar (Médicos & Fisioterapeuta)</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="painelTabContent">
+            
+            <!-- CONTEÚDO 1: RADAR DE CORRIDAS (AO VIVO) -->
+            <div class="tab-pane fade show active" id="treinoContent" role="tabpanel">
+                
+                <!-- Painel de Controle de Corrida & Fisiologia -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="card p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                                <div>
+                                    <h5 class="text-info fw-bold mb-1">⏱️ Monitoramento em Tempo Real</h5>
+                                    <p class="text-muted small mb-0">Rastreamento de alta precisão via GPS para cálculos metabólicos e biomecânicos.</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button id="btnIniciar" class="btn btn-success fw-bold px-4" onclick="iniciarTreino()">▶ Iniciar Corrida</button>
+                                    <button id="btnParar" class="btn btn-danger fw-bold px-4" onclick="pararSalvarTreino()" disabled>⏹ Finalizar e Enviar</button>
+                                </div>
+                            </div>
+
+                            <!-- Métricas Fisiológicas -->
+                            <div class="row g-3">
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="metric-box">
+                                        <span class="text-muted small text-uppercase fw-bold">Distância Real</span>
+                                        <h3 id="lblDistancia">0.00 km</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="metric-box" style="border-left-color: #10b981;">
+                                        <span class="text-muted small text-uppercase fw-bold">Tempo Decorrido</span>
+                                        <h3 id="lblTempo">00:00</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="metric-box" style="border-left-color: #f59e0b;">
+                                        <span class="text-muted small text-uppercase fw-bold">Ritmo Médio (Pace)</span>
+                                        <h3 id="lblPace">0'00'' /km</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="metric-box" style="border-left-color: #ef4444;">
+                                        <span class="text-muted small text-uppercase fw-bold">Zonas de Esforço</span>
+                                        <h3 id="lblZona" class="fs-5 mt-1 text-warning">Repouso</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inteligência Esportiva & Equipamentos -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card p-4 h-100">
+                            <h5 class="text-info mb-3 fs-6 fw-bold">🔮 Preditor de Prova (Algoritmo de Ritmo)</h5>
+                            <p class="text-muted small">Estimativa de tempo em provas oficiais calculada com base no histórico recente:</p>
+                            <div class="d-flex justify-content-around text-center my-3">
+                                <div class="p-3 bg-dark rounded border border-secondary flex-fill mx-1">
+                                    <span class="text-muted small d-block">5 KM</span>
+                                    <strong id="pred5k" class="fs-5 text-success">--:--</strong>
+                                </div>
+                                <div class="p-3 bg-dark rounded border border-secondary flex-fill mx-1">
+                                    <span class="text-muted small d-block">10 KM</span>
+                                    <strong id="pred10k" class="fs-5 text-warning">--:--</strong>
+                                </div>
+                                <div class="p-3 bg-dark rounded border border-secondary flex-fill mx-1">
+                                    <span class="text-muted small d-block">21 KM (Meia)</span>
+                                    <strong id="pred21k" class="fs-5 text-danger">--:--</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card p-4 h-100">
+                            <h5 class="text-info mb-3 fs-6 fw-bold">👟 Gestão de Desgaste (Fisioterapia / Ortopedia)</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small">Calçado Ativo (Amortecimento):</span>
+                                <span class="small text-warning" id="kmTenisTotal">Calculando...</span>
+                            </div>
+                            <div class="progress bg-dark mb-3" style="height: 12px; border: 1px solid #475569;">
+                                <div id="barraTenis" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-muted small mb-0">⚠️ Evita micro-traumas repetitivos na coluna e tendões controlando o limite de 600km do solado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mapa e Gráfico -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card p-3 h-100">
+                            <h5 class="text-white mb-3 fs-6 fw-bold">📍 Rota de Alta Precisão (GPS)</h5>
+                            <div id="map"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card p-3 h-100">
+                            <h5 class="text-white mb-3 fs-6 fw-bold">📈 Histórico de Volume (KM)</h5>
+                            <div class="d-flex justify-content-center align-items-center" style="height: 380px;">
+                                <canvas id="meuGrafico"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CONTEÚDO 2: PRONTUÁRIO CLÍNICO MULTIDISCIPLINAR -->
+            <div class="tab-pane fade" id="clinicoContent" role="tabpanel">
+                <div class="row g-4">
+                    
+                    <!-- Fisioterapia -->
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 border-start border-primary border-4">
+                            <h5 class="text-primary fw-bold">👨‍⚕️ Parecer da Fisioterapia</h5>
+                            <p class="text-muted small mt-2">Análise de sobrecarga biomecânica e prevenção de lesões por repetição.</p>
+                            <hr class="border-secondary">
+                            <ul class="list-unstyled small text-light">
+                                <li class="mb-2">🔹 <strong>Volume Semanal Acumulado:</strong> <span id="clinicoKmTotal" class="text-info fw-bold">0 km</span></li>
+                                <li class="mb-2">🔹 <strong>Risco de Sobrecarga Tendínea:</strong> <span class="badge bg-success">Baixo / Seguro</span></li>
+                                <li class="mb-2">🔹 <strong>Recomendação de Descanso:</strong> Manter 48h de recuperação entre trechos de alta intensidade em asfalto.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Cardiologia -->
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 border-start border-danger border-4">
+                            <h5 class="text-danger fw-bold">❤️ Relatório Cardiológico</h5>
+                            <p class="text-muted small mt-2">Comportamento metabólico e tempo sob estresse aeróbico/anaeróbico.</p>
+                            <hr class="border-secondary">
+                            <ul class="list-unstyled small text-light">
+                                <li class="mb-2">🔹 <strong>Tempo Total Sob Esforço:</strong> <span id="clinicoTempoTotal" class="text-info fw-bold">0 min</span></li>
+                                <li class="mb-2">🔹 <strong>Zona Predominante:</strong> Aeróbica / Limiar</li>
+                                <li class="mb-2">🔹 <strong>Status Vascular:</strong> Resposta cardiovascular compatível com os parâmetros esperados.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Endocrinologia -->
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 border-start border-warning border-4">
+                            <h5 class="text-warning fw-bold">🥗 Controle Endocrinológico & Gasto Calórico</h5>
+                            <p class="text-muted small mt-2">Gasto energético e demanda metabólica para suporte nutricional.</p>
+                            <hr class="border-secondary">
+                            <ul class="list-unstyled small text-light">
+                                <li class="mb-2">🔹 <strong>Gasto Calórico Estimado Total:</strong> <span id="clinicoCalorias" class="text-info fw-bold">0 kcal</span></li>
+                                <li class="mb-2">🔹 <strong>Eficiência Lipídica:</strong> Alta queima em sessões de ritmo moderado.</li>
+                                <li class="mb-2">🔹 <strong>Ajuste Nutricional Sugerido:</strong> Reposição hídrica adequada e hidratos de carbono em trechos superiores a 45 min.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Médico da Coluna / Ortopedia -->
+                    <div class="col-md-6">
+                        <div class="card p-4 h-100 border-start border-success border-4">
+                            <h5 class="text-success fw-bold">🦴 Avaliação de Coluna & Impacto Ortopédico</h5>
+                            <p class="text-muted small mt-2">Monitoramento de choques mecânicos repetitivos e impacto articular.</p>
+                            <hr class="border-secondary">
+                            <ul class="list-unstyled small text-light">
+                                <li class="mb-2">🔹 <strong>Superfície Predominante:</strong> Asfalto / Piso Rígido</li>
+                                <li class="mb-2">🔹 <strong>Estresse Lombar Estimado:</strong> Moderado (Monitorado pelo desgaste do calçado)</li>
+                                <li class="mb-2">🔹 <strong>Recomendação Postural:</strong> Fortalecimento de core e transição programada para solos mistos.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tabela de Histórico Geral -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card p-4 shadow-sm">
+                    <h5 class="text-info mb-3 fs-6 fw-bold">📋 Histórico Clínico de Atividades Salvas</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border-secondary">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Distância</th>
+                                    <th>Tempo</th>
+                                    <th>Ritmo</th>
+                                    <th>Status Médico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in treinos %}
+                                <tr>
+                                    <td>{{ t.data_treino }}</td>
+                                    <td><span class="fw-bold text-info">{{ t.distancia_km }} km</span></td>
+                                    <td>{{ t.tempo_minutos }} min</td>
+                                    <td>{{ t.ritmo_medio }}</td>
+                                    <td><span class="badge bg-success">Aprovado pelo Sistema</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Nenhum treino registrado ainda. Inicie sua primeira corrida na aba anterior!</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts de Rastreamento e Lógica Clínica -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([-23.435, -47.062], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let watchID = null;
+        let marker = null;
+        let trajeto = [];
+        let polyline = L.polyline([], {color: '#38bdf8', weight: 5}).addTo(map);
+        
+        let distanciaTotalMetros = 0;
+        let segundosDecorridos = 0;
+        let timerInterval = null;
+        let ultimaPosicaoGPS = null;
+        let paceTextoFinal = "0'00''";
+
+        function formatarTempo(segundos) {
+            let m = Math.floor(segundos / 60);
+            let s = segundos % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function iniciarTreino() {
+            if (!navigator.geolocation) {
+                alert("Geolocalização não suportada.");
+                return;
+            }
+
+            distanciaTotalMetros = 0;
+            segundosDecorridos = 0;
+            trajeto = [];
+            polyline.setLatLngs([]);
+            ultimaPosicaoGPS = null;
+
+            document.getElementById('btnIniciar').disabled = true;
+            document.getElementById('btnParar').disabled = false;
+
+            timerInterval = setInterval(() => {
+                segundosDecorridos++;
+                document.getElementById('lblTempo').innerText = formatarTempo(segundosDecorridos);
+                analisarFisiologiaEAgressivo();
+            }, 1000);
+
+            watchID = navigator.geolocation.watchPosition((position) => {
+                const posAtual = [position.coords.latitude, position.coords.longitude];
+
+                if (ultimaPosicaoGPS) {
+                    let distanciaTrecho = map.distance(ultimaPosicaoGPS, posAtual);
+                    if (distanciaTrecho > 1) {
+                        distanciaTotalMetros += distanciaTrecho;
+                    }
+                }
+
+                ultimaPosicaoGPS = posAtual;
+                trajeto.push(posAtual);
+                polyline.setLatLngs(trajeto);
+
+                if (!marker) {
+                    marker = L.marker(posAtual).addTo(map).bindPopup("Você está aqui").openPopup();
+                } else {
+                    marker.setLatLng(posAtual);
+                }
+                map.setView(posAtual, 17);
+
+                let kmAtual = (distanciaTotalMetros / 1000).toFixed(2);
+                document.getElementById('lblDistancia').innerText = kmAtual + " km";
+
+            }, (error) => {
+                console.error("Erro GPS:", error);
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000
+            });
+        }
+
+        function analisarFisiologiaEAgressivo() {
+            let km = distanciaTotalMetros / 1000;
+            let minutosTotal = segundosDecorridos / 60;
+
+            if (km > 0.05) {
+                let paceMinutosTotais = minutosTotal / km;
+                let pMin = Math.floor(paceMinutosTotais);
+                let pSec = Math.round((paceMinutosTotais - pMin) * 60);
+                paceTextoFinal = `${pMin}'${String(pSec).padStart(2, '0')}''`;
+                document.getElementById('lblPace').innerText = paceTextoFinal + " /km";
+
+                let zonaEl = document.getElementById('lblZona');
+                if (paceMinutosTotais < 4.5) {
+                    zonaEl.innerText = "🔥 VO2 Max (Anaeróbico)";
+                    zonaEl.className = "fs-5 mt-1 text-danger fw-bold";
+                } else if (paceMinutosTotais < 5.5) {
+                    zonaEl.innerText = "⚡ Limiar de Lactato";
+                    zonaEl.className = "fs-5 mt-1 text-warning fw-bold";
+                } else {
+                    zonaEl.innerText = "🟢 Aeróbico / Base";
+                    zonaEl.className = "fs-5 mt-1 text-success fw-bold";
+                }
+            } else {
+                document.getElementById('lblPace').innerText = `0'00'' /km`;
+                document.getElementById('lblZona').innerText = "Aquecimento";
+            }
+        }
+
+        function pararSalvarTreino() {
+            if (watchID !== null) {
+                navigator.geolocation.clearWatch(watchID);
+                watchID = null;
+            }
+            clearInterval(timerInterval);
+
+            let kmFinal = (distanciaTotalMetros / 1000).toFixed(2);
+            let minutosFinal = Math.max(1, Math.round(segundosDecorridos / 60));
+
+            if (kmFinal < 0.05) {
+                alert("Atividade muito curta.");
+                location.reload();
+                return;
+            }
+
+            const dataHoje = new Date().toISOString().split('T')[0];
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            formData.append('data_treino', dataHoje);
+            formData.append('distancia_km', kmFinal);
+            formData.append('tempo_minutos', minutosFinal);
+            formData.append('ritmo_medio', paceTextoFinal);
+
+            fetch('', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    alert("Atividade processada e integrada ao Prontuário Clínico com sucesso!");
+                    window.location.reload();
+                } else {
+                    alert("Erro ao salvar.");
+                }
+            });
+        }
+
+        // Processamento de Dados para o Prontuário Clínico (Calculado via Histórico do Django)
+        const historicoDistancias = [{% for t in treinos %}{{ t.distancia_km }},{% endfor %}];
+        const historicoTempos = [{% for t in treinos %}{{ t.tempo_minutos }},{% endfor %}];
+        
+        let somaKmTotal = historicoDistancias.reduce((a, b) => a + b, 0);
+        let somaTempoTotal = historicoTempos.reduce((a, b) => a + b, 0);
+        let caloriasTotais = Math.round(somaKmTotal * 65);
+
+        // Atualizar painel clínico e tênis
+        document.getElementById('kmTenisTotal').innerText = somaKmTotal.toFixed(1) + " km / 600 km";
+        let porcentagemTenis = Math.min(100, (somaKmTotal / 600) * 100);
+        document.getElementById('barraTenis').style.width = porcentagemTenis + "%";
+
+        document.getElementById('clinicoKmTotal').innerText = somaKmTotal.toFixed(2) + " km";
+        document.getElementById('clinicoTempoTotal').innerText = somaTempoTotal + " min";
+        document.getElementById('clinicoCalorias').innerText = caloriasTotais + " kcal";
+
+        if (historicoDistancias.length > 0) {
+            let paceMedioEstimadoMin = 5.2; 
+            let t5k = Math.round(5 * paceMedioEstimadoMin);
+            let t10k = Math.round(10 * (paceMedioEstimadoMin * 1.05));
+            let t21k = Math.round(21.1 * (paceMedioEstimadoMin * 1.12));
+
+            document.getElementById('pred5k').innerText = `${Math.floor(t5k/60)}h ${t5k%60}m`;
+            document.getElementById('pred10k').innerText = `${Math.floor(t10k/60)}h ${t10k%60}m`;
+            document.getElementById('pred21k').innerText = `${Math.floor(t21k/60)}h ${t21k%60}m`;
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('meuGrafico').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [{% for t in treinos %}'{{ t.data_treino }}',{% endfor %}],
+                datasets: [{ 
+                    label: 'Volume (KM)', 
+                    data: [{% for t in treinos %}{{ t.distancia_km }},{% endfor %}],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
