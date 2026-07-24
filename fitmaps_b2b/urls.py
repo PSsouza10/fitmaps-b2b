@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', lambda request: HttpResponseRedirect('/dashboard/')),  # Redireciona a raiz para o dashboard
-    path('', include('gestao_treinos.urls')),                       # Delega todas as rotas para o app gestao_treinos
+    path('accounts/', include('django.contrib.auth.urls')), # Adiciona login, logout, etc.
+    path('', lambda request: HttpResponseRedirect('/dashboard/')),  
+    path('', include('gestao_treinos.urls')),                       
 ]
