@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 from .forms import RegistroUsuarioForm
 
 def dashboard(request):
@@ -7,6 +8,13 @@ def dashboard(request):
     View responsável por renderizar a página do dashboard do usuário.
     """
     return render(request, 'gestao_treinos/dashboard.html')
+
+@login_required
+def novo_treino(request):
+    """
+    View responsável por registrar um novo treino.
+    """
+    return render(request, 'gestao_treinos/novo_treino.html')
 
 def registrar_usuario(request):
     """
