@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import math
 
 class PerfilUsuario(models.Model):
     TIPO_CHOICES = (
@@ -13,6 +14,7 @@ class PerfilUsuario(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.get_tipo_display()})"
 
+
 class Treino(models.Model):
     ZONA_CHOICES = (
         ('Z1', 'Zona 1 - Recuperação'),
@@ -24,14 +26,25 @@ class Treino(models.Model):
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário")
     data_treino = models.DateField(verbose_name="Data do Treino")
-    distancia_km = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Distância (km)")
-    tempo_minutos = models.IntegerField(verbose_name="Tempo (minutos)")
+    distancia_km = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Distância (km)", blank=True, null=True)
+    tempo_minutos = models.IntegerField(verbose_name="Tempo (minutos)", blank=True, null=True)
     ritmo_medio = models.CharField(max_length=10, blank=True, null=True, verbose_name="Ritmo Médio")
     calorias = models.IntegerField(default=0, verbose_name="Calorias (kcal)")
     zona_predominante = models.CharField(max_length=2, choices=ZONA_CHOICES, blank=True, null=True, verbose_name="Zona Cardíaca Predominante")
 
     def __str__(self):
         return f"Treino de {self.usuario.username} em {self.data_treino}"
+
+    def calcular_distancia(self):
+        coords = list(self.coordenadas.order_by("timestamp"))
+        distancia_total = 0
+        for i in range(1, len(coords)):
+            distancia_total += haversine(
+                coords[i-1].latitude, coords[i-1].longitude,
+                coords[i].latitude, coords[i].longitude
+            )
+        return round(distancia_total, 2)
+
 
 class PrescricaoTreino(models.Model):
     profissional = models.ForeignKey(User, on_delete=models.CASCADE, related_name="prescricoes_feitas", verbose_name="Profissional")
@@ -42,3 +55,23 @@ class PrescricaoTreino(models.Model):
 
     def __str__(self):
         return f"Prescrição para {self.atleta.username} por {self.profissional.username}"
+
+
+class Coordenada(models.Model):
+    treino = models.ForeignKey(Treino, on_delete=models.CASCADE, related_name="coordenadas")
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.latitude}, {self.longitude} ({self.treino.usuario.username})"
+
+
+# Função auxiliar para calcular distância entre pontos GPS
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371  # raio da Terra em km
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
