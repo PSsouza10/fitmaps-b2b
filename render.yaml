@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: fitmaps-b2b
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn fitmaps_b2b.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: fitmaps_b2b.settings
+      - key: SECRET_KEY
+        value: "troque-esta-chave-em-producao"
+      - key: DEBUG
+        value: "False"
