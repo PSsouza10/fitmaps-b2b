@@ -1,34 +1,45 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import RegistroUsuarioForm
+from .models import Prescricao, Treino
 
-def dashboard(request):
-    """
-    View responsável por renderizar a página do dashboard do usuário.
-    """
-    return render(request, 'gestao_treinos/dashboard.html')
-
-@login_required
-def novo_treino(request):
-    """
-    View responsável por registrar um novo treino.
-    """
-    return render(request, 'gestao_treinos/novo_treino.html')
-
-def registrar_usuario(request):
-    """
-    View responsável pelo auto-cadastro (inscrição) de novos usuários no sistema.
-    """
-    if request.method == 'POST':
-        form = RegistroUsuarioForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Faz o login automático do usuário logo após o cadastro
+# Login do aluno
+def aluno_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
             login(request, user)
-            # Redireciona para o dashboard após se inscrever
-            return redirect('gestao_treinos:dashboard')
-    else:
-        form = RegistroUsuarioForm()
-    
-    return render(request, 'gestao_treinos/registro.html', {'form': form})
+            return redirect("dashboard_aluno")
+        else:
+            return render(request, "gestao_treinos/login.html", {"error": "Usuário ou senha inválidos"})
+    return render(request, "gestao_treinos/login.html")
+
+# Dashboard do aluno
+@login_required
+def dashboard_aluno(request):
+    if request.method == "POST":
+        data_treino = request.POST.get("data_treino")
+        distancia_km = request.POST.get("distancia_km")
+        tempo_minutos = request.POST.get("tempo_minutos")
+
+        Treino.objects.create(
+            data_treino=data_treino,
+            distancia_km=distancia_km,
+            tempo_minutos=tempo_minutos,
+            aluno=request.user  # se o treino estiver ligado ao usuário
+        )
+        return redirect("dashboard_aluno")
+
+    prescricoes = Prescricao.objects.all()
+    treinos = Treino.objects.all()
+    return render(request, "gestao_treinos/dashboard.html", {
+        "prescricoes": prescricoes,
+        "treinos": treinos
+    })
+
+# Logout
+def aluno_logout(request):
+    logout(request)
+    return redirect("aluno_login")

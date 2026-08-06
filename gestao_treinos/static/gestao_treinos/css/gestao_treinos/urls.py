@@ -1,6 +1,7 @@
-from django.urls import path
-from . import views
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
-    path("dashboard/", views.painel_atleta, name="painel_atleta"),
+    path("admin/", admin.site.urls),
+    path("", include("gestao_treinos.urls")),  # conecta as rotas do app
 ]

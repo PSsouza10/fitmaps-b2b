@@ -1,0 +1,14 @@
+{% load static %}
+<html>
+<head>
+  <title>Fitmaps</title>
+  <!-- Bootstrap/AdminLTE do Jazzmin -->
+  <link rel="stylesheet" href="{% static 'jazzmin/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'jazzmin/css/adminlte.min.css' %}">
+  <!-- Seu CSS customizado -->
+  <link rel="stylesheet" href="{% static 'gestao_treinos/css/painel.css' %}">
+</head>
+<body>
+  {% block content %}{% endblock %}
+</body>
+</html>
