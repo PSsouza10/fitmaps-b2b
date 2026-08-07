@@ -1,8 +1,16 @@
-from django.contrib import admin
 from django.urls import path
-from gestao_treinos import views
+from . import views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),  # rota do painel admin
-    path("dashboard/aluno/", views.dashboard_aluno, name="dashboard_aluno"),  # rota do dashboard
+    # Página inicial
+    path("", views.home, name="home"),
+
+    # Login do aluno
+    path("login/aluno/", views.aluno_login, name="aluno_login"),
+
+    # Dashboard do aluno
+    path("dashboard/aluno/", views.dashboard_aluno, name="dashboard_aluno"),
+
+    # Logout do aluno
+    path("logout/", views.aluno_logout, name="aluno_logout"),
 ]
