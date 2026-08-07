@@ -14,7 +14,11 @@
         <div class="container">
             <a class="navbar-brand" href="/">Fitmaps</a>
             <div class="ms-auto">
-                <a href="{% url 'logout' %}" class="btn btn-outline-light">Sair</a>
+                <!-- ✅ Logout via POST (exigido pelo Django 5.1+) -->
+                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-light">Sair</button>
+                </form>
             </div>
         </div>
     </nav>
