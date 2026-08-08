@@ -8,23 +8,28 @@
 </head>
 <body class="bg-light">
 
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">Fitmaps</a>
+            <div class="ms-auto">
+                <a href="{% url 'aluno_login' %}" class="btn btn-outline-light">Login do Aluno</a>
+            </div>
         </div>
     </nav>
 
-    <div class="container text-center mt-5">
-        <h1 class="display-4">Bem-vindo ao Fitmaps!</h1>
-        <p class="lead">Gerencie seus treinos e prescrições de forma simples e prática.</p>
+    <!-- Conteúdo principal -->
+    <div class="container mt-5 text-center">
+        <h1 class="mb-4">Bem-vindo ao Fitmaps</h1>
+        <p class="lead">Sua plataforma para treinos e prescrições personalizadas.</p>
 
         <div class="mt-4">
-            <a href="{% url 'aluno_login' %}" class="btn btn-success btn-lg me-2">Login do Aluno</a>
-            <a href="{% url 'dashboard_aluno' %}" class="btn btn-info btn-lg me-2">Dashboard do Aluno</a>
-            <a href="/admin/" class="btn btn-secondary btn-lg">Administração</a>
+            <a href="{% url 'aluno_login' %}" class="btn btn-primary btn-lg me-3">Entrar como Aluno</a>
+            <a href="/admin/" class="btn btn-secondary btn-lg">Área Administrativa</a>
         </div>
     </div>
 
+    <!-- Rodapé -->
     <footer class="bg-primary text-white text-center py-3 mt-5">
         <p>&copy; 2026 Fitmaps - Todos os direitos reservados</p>
     </footer>
