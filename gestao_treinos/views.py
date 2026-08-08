@@ -3,9 +3,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Prescricao, Treino
 
+
 # Página inicial (home)
 def home(request):
     return render(request, "gestao_treinos/home.html")
+
 
 # Login do aluno
 def aluno_login(request):
@@ -24,6 +26,7 @@ def aluno_login(request):
             )
     return render(request, "gestao_treinos/login.html")
 
+
 # Dashboard do aluno
 @login_required
 def dashboard_aluno(request):
@@ -36,16 +39,17 @@ def dashboard_aluno(request):
             data_treino=data_treino,
             distancia_km=distancia_km,
             tempo_minutos=tempo_minutos,
-            aluno=request.user  # treino ligado ao usuário logado
+            aluno=request.user
         )
         return redirect("dashboard_aluno")
 
     prescricoes = Prescricao.objects.all()
-    treinos = Treino.objects.filter(aluno=request.user)  # só treinos do aluno logado
+    treinos = Treino.objects.filter(aluno=request.user)
     return render(request, "gestao_treinos/dashboard.html", {
         "prescricoes": prescricoes,
         "treinos": treinos
     })
+
 
 # Logout do aluno
 def aluno_logout(request):
