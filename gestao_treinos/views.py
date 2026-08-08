@@ -3,13 +3,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Prescricao, Treino
 
-
 # Página inicial (home)
 def home(request):
     return render(request, "gestao_treinos/home.html")
 
-
-# Login do aluno
+# Login do aluno (customizado)
 def aluno_login(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -25,7 +23,6 @@ def aluno_login(request):
                 {"error": "Usuário ou senha inválidos"}
             )
     return render(request, "gestao_treinos/login.html")
-
 
 # Dashboard do aluno
 @login_required
@@ -49,7 +46,6 @@ def dashboard_aluno(request):
         "prescricoes": prescricoes,
         "treinos": treinos
     })
-
 
 # Logout do aluno
 def aluno_logout(request):
