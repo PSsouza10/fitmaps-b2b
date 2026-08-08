@@ -27,15 +27,13 @@ SECRET_KEY = 'django-insecure-troque-esta-chave-em-producao'
 DEBUG = True
 ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 INSTALLED_APPS = [
-    'jazzmin',  # se você estiver usando Jazzmin
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
-    'django.contrib.contenttypes',   # 👈 ESSENCIAL
+    'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Seu app
     'gestao_treinos',
 ]
 
@@ -110,6 +108,7 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Bem-vindo ao painel Fitmaps",
 }
 
-# ✅ Ajustes para login personalizado
+# ✅ Ajustes para login/logout
 LOGIN_URL = "aluno_login"
 LOGIN_REDIRECT_URL = "/dashboard/aluno/"
+LOGOUT_REDIRECT_URL = "aluno_login"  # ✅ Redireciona para login após logout
